@@ -1,0 +1,337 @@
+PROGRAM DAY_3
+*
+OPEN 'UNIX.FILE' TO F.UNIX ELSE
+  CRT 'CANT OPEN UNIX.FILE'
+  STOP
+END
+OPEN 'TEMP' TO F.TEMP ELSE
+  CRT 'CANT OPEN TEMP'
+  STOP
+END
+*
+IDATA=""
+READ IDATA FROM F.UNIX,'DAY_3' ELSE
+  CRT 'NO DAY_3 DATA IN UNIX.FILE'
+  STOP
+END
+*
+   RAW.DATA = ''
+*
+   RAW.DATA<-1> = '467..114..'
+   RAW.DATA<-1> = '...*......'
+   RAW.DATA<-1> = '..35..633.'
+   RAW.DATA<-1> = '......#...'
+   RAW.DATA<-1> = '617*......'
+   RAW.DATA<-1> = '.....+.58.'
+   RAW.DATA<-1> = '..592.....'
+   RAW.DATA<-1> = '......755.'
+   RAW.DATA<-1> = '...$.*....'
+   RAW.DATA<-1> = '.664.598..'
+*
+*IDATA=RAW.DATA
+*
+EXECUTE 'CLEAR-FILE TEMP'
+*
+CRT 'Starting DAY_3 PART 1'
+CRT '======================'
+ACNT=DCOUNT(IDATA,@AM)
+FOR I = 1 TO ACNT
+  NKEY=I
+  CKEY=I:"-C"
+  NDATA=""
+  CDATA=""
+  NPOS=0
+  CPOS=0
+  XLEN=LEN(IDATA<I>)
+  FOR K = 1 TO XLEN
+    XCHAR=IDATA<I>[K,1]
+    IF XCHAR # "." THEN
+      IF NOT(XCHAR MATCHES "1N") THEN
+        CPOS+=1
+        CDATA<1,CPOS>=XCHAR
+        CDATA<2,CPOS>=K
+        NOUP=0
+      END ELSE
+        NOUP=0
+        IF K GT 1 THEN
+          IF IDATA<I>[(K-1),1] MATCHES "1N" THEN NOUP=1
+        END
+        IF NOUP=0 THEN
+          NPOS+=1
+          NOUP=1
+        END
+        NDATA<1,NPOS>:=XCHAR
+        IF NDATA<2,NPOS>="" THEN
+           NDATA<2,NPOS>=K
+        END ELSE
+           NDATA<2,NPOS>:=",":K
+        END
+      END
+    END
+  NEXT K
+  CRT NKEY
+  IF NDATA # "" THEN
+    WRITE NDATA ON F.TEMP,NKEY
+  END ELSE
+    CRT 'NO ':NKEY
+  END
+  IF CDATA # "" THEN
+    WRITE CDATA ON F.TEMP,CKEY
+  END ELSE
+    CRT 'NO ':CKEY
+  END
+NEXT I
+*
+*ID The numbers
+GTOT=0
+FOR I = 1 TO ACNT
+  NKEY="";CKEY=""
+  NDATA="";CDATA=""
+  NKEY=I;CKEY=I:"-C"
+  READ NDATA FROM F.TEMP,NKEY ELSE
+    CRT 'CANT READ ':NKEY
+    CONTINUE
+  END
+  READ CDATA FROM F.TEMP,CKEY ELSE
+    CRT 'CANT READ ':CKEY
+  END
+  *
+  *get line before and after
+  BDATA="";DDATA=""
+  BKEY="";DKEY=""
+  BKEY=I-1:"-C";DKEY=I+1:"-C"
+  IF I = 1 THEN
+    READ DDATA FROM F.TEMP,DKEY ELSE
+      CRT 'CANT READ ':DKEY
+    END
+  END ELSE
+    IF I = ACNT THEN
+      READ BDATA FROM F.TEMP,BKEY ELSE
+        CRT 'CANT READ ':BKEY
+      END
+    END ELSE
+      READ BDATA FROM F.TEMP,BKEY ELSE
+        CRT 'CANT READ ':BKEY
+      END
+      READ DDATA FROM F.TEMP,DKEY ELSE
+        CRT 'CANT READ ':DKEY
+      END
+    END
+  END
+  *
+  *now get numbers
+CRT 'CHECKING ':NKEY
+  VCNT=DCOUNT(NDATA<1>,@VM)
+  FOR K = 1 TO VCNT
+    ISTRUE=0
+    THENUM=""
+    CPOS=""
+    THENUM=NDATA<1,K>
+    *
+    CPOS=NDATA<2,K>
+    CONVERT "," TO @VM IN CPOS
+    YCNT=DCOUNT(CPOS<1>,@VM)
+    FNUM="";LNUM=""
+    FNUM=CPOS<1,1>;LNUM=CPOS<1,YCNT>
+    CPOS=(FNUM-1):@VM:CPOS:@VM:(LNUM+1)
+    *
+CRT 'THENUM = ':THENUM
+CRT 'STR POSS = ':CHANGE(CPOS,@VM,',')
+    CCNT=DCOUNT(CDATA<1>,@VM)
+    BCNT=DCOUNT(BDATA<1>,@VM)
+    DCNT=DCOUNT(DDATA<1>,@VM)
+    *
+CRT 'LOOPING THRU ':CKEY
+    FOR C = 1 TO CCNT
+      XCHAR="";XCPOS=""
+      XCHAR=CDATA<1,C>
+      XCPOS=CDATA<2,C>
+      IF XCHAR # "" THEN
+CRT 'FOUND XCHAR OF ':XCHAR
+        LOCATE(XCPOS,CPOS,1;THEVAL) THEN
+          ISTRUE=1
+CRT 'ISTRUE = 1'
+        END
+      END
+    NEXT C
+    *
+CRT 'LOOPING THRU ':BKEY
+    FOR B = 1 TO BCNT
+      XCHAR="";XCPOS=""
+      XCHAR=BDATA<1,B>
+      XCPOS=BDATA<2,B>
+      IF XCHAR # "" THEN
+CRT 'FOUND XCHAR OF ':XCHAR
+        LOCATE(XCPOS,CPOS,1;THEVAL) THEN
+          ISTRUE=1
+CRT 'ISTRUE = 1'
+        END        
+      END
+    NEXT B
+    *
+CRT 'LOOPING THRU ':DKEY
+    FOR D = 1 TO DCNT
+      XCHAR="";XCPOS=""
+      XCHAR=DDATA<1,D>
+      XCPOS=DDATA<2,D>
+      IF XCHAR # "" THEN
+CRT 'FOUND XCHAR OF ':XCHAR
+        LOCATE(XCPOS,CPOS,1;THEVAL) THEN
+          ISTRUE=1
+CRT 'ISTRUE = 1'
+        END        
+      END
+    NEXT D
+    *
+    IF ISTRUE=1 THEN
+      GTOT+=THENUM
+    END
+*ANYTHING=""
+*INPUT ANYTHING
+*IF ANYTHING='X' OR ANYTHING='STOP' THEN STOP
+  NEXT K
+NEXT I
+*
+CRT 'GTOT = ':GTOT
+*
+CRT
+CRT "DAY_3 PART 2"
+*
+GTOT=0
+FOR I = 1 TO ACNT
+  NKEY="";CKEY=""
+  NDATA="";CDATA=""
+  NKEY=I;CKEY=I:"-C"
+CRT 'WORKING ON ':CKEY
+  READ NDATA FROM F.TEMP,NKEY ELSE
+    CRT '  CANT READ ':NKEY
+  END
+  READ CDATA FROM F.TEMP,CKEY ELSE
+    CRT '  CANT READ ':CKEY
+  END
+  *
+  *get line before and after
+  BDATA="";DDATA=""
+  BKEY="";DKEY=""
+  BKEY=I-1;DKEY=I+1
+  IF I = 1 THEN
+    READ DDATA FROM F.TEMP,DKEY ELSE
+      CRT '  CANT READ ':DKEY
+    END
+  END ELSE
+    IF I = ACNT THEN
+      READ BDATA FROM F.TEMP,BKEY ELSE
+        CRT '  CANT READ ':BKEY
+      END
+    END ELSE
+      READ BDATA FROM F.TEMP,BKEY ELSE
+        CRT '  CANT READ ':BKEY
+      END
+      READ DDATA FROM F.TEMP,DKEY ELSE
+        CRT '  CANT READ ':DKEY
+      END
+    END
+  END
+  *
+  *now get numbers
+CRT '  NOW CHECKING ':CKEY
+  TOADD=""
+  VCNT=DCOUNT(NDATA<1>,@VM)
+  CCNT=DCOUNT(CDATA<1>,@VM)
+  BCNT=DCOUNT(BDATA<1>,@VM)
+  DCNT=DCOUNT(DDATA<1>,@VM)
+  FOR C = 1 TO CCNT
+    TOMULTI="";TOMULTI.POS=0
+    XCHAR="";XCPOS=""
+    XCHAR=CDATA<1,C>
+    XCPOS=CDATA<2,C>
+    IF XCHAR = "*" THEN
+CRT '    FOUND XCHAR OF ':XCHAR
+CRT '    XCPOS = ':XCPOS
+CRT '      CHECKING LINE ':NKEY
+      FOR K = 1 TO VCNT
+        THENUM=""
+        CPOS=""
+        THENUM=NDATA<1,K>
+        *
+        CPOS=NDATA<2,K>
+        CONVERT "," TO @VM IN CPOS
+        YCNT=DCOUNT(CPOS<1>,@VM)
+        FNUM="";LNUM=""
+        FNUM=CPOS<1,1>;LNUM=CPOS<1,YCNT>
+        CPOS=(FNUM-1):@VM:CPOS:@VM:(LNUM+1)
+        *
+        LOCATE(XCPOS,CPOS,1;THEVAL) THEN
+CRT '      FOUND NUMBER OF ':THENUM
+          TOMULTI.POS+=1
+          TOMULTI<TOMULTI.POS>=THENUM
+        END
+      NEXT K
+      *
+CRT '      CHECKING LINE ':BKEY
+      FOR B = 1 TO BCNT
+        THENUM=""
+        CPOS=""
+        THENUM=BDATA<1,B>
+        *
+        CPOS=BDATA<2,B>
+        CONVERT "," TO @VM IN CPOS
+        YCNT=DCOUNT(CPOS<1>,@VM)
+        FNUM="";LNUM=""
+        FNUM=CPOS<1,1>;LNUM=CPOS<1,YCNT>
+        CPOS=(FNUM-1):@VM:CPOS:@VM:(LNUM+1)
+        *
+        LOCATE(XCPOS,CPOS,1;THEVAL) THEN
+CRT '      FOUND NUMBER OF ':THENUM
+          TOMULTI.POS+=1
+          TOMULTI<TOMULTI.POS>=THENUM
+        END 
+      NEXT B
+      *
+CRT '      CHECKING LINE ':DKEY
+      FOR D = 1 TO DCNT
+        THENUM=""
+        CPOS=""
+        THENUM=DDATA<1,D>
+        *
+        CPOS=DDATA<2,D>
+        CONVERT "," TO @VM IN CPOS
+        YCNT=DCOUNT(CPOS<1>,@VM)
+        FNUM="";LNUM=""
+        FNUM=CPOS<1,1>;LNUM=CPOS<1,YCNT>
+        CPOS=(FNUM-1):@VM:CPOS:@VM:(LNUM+1)
+        *
+        LOCATE(XCPOS,CPOS,1;THEVAL) THEN
+CRT '      FOUND NUMBER OF ':THENUM
+          TOMULTI.POS+=1
+          TOMULTI<TOMULTI.POS>=THENUM
+        END 
+      NEXT D
+      IF TOMULTI.POS=2 THEN
+CRT "    TOMULTI HAS TWO #'S"
+CRT '    TOADD<-1> = ':TOMULTI<1>:' * ':TOMULTI<2>
+        TOADD<-1>=TOMULTI<1>*TOMULTI<2>
+      END ELSE
+CRT "    TOMULTI.POS = ":TOMULTI.POS
+CRT "    TOMULTI = ":CHANGE(TOMULTI,@AM,',')
+      END
+      *
+    END
+  NEXT C
+  IF TOADD # "" THEN
+CRT 'CALCULATING.....'
+   TNUM=""
+   AA=DCOUNT(TOADD,@AM)
+   FOR L = 1 TO AA
+     GTOT+=TOADD<L>
+   NEXT L
+  END
+*ANYTHING=""
+*INPUT ANYTHING
+*IF ANYTHING='X' OR ANYTHING='STOP' THEN STOP
+NEXT I
+*
+CRT 'GTOT = ':GTOT
+*
+STOP
+END
