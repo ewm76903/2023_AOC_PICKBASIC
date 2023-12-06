@@ -1,0 +1,100 @@
+PROGRAM DAY_6
+*
+OPEN 'UNIX.FILE' TO F.UNIX ELSE
+  CRT 'CANT OPEN UNIX.FILE'
+  STOP
+END
+*
+IDATA=""
+READ IDATA FROM F.UNIX,'DAY_6_DATA' ELSE
+  CRT 'CANT READ DAY_6_DATA'
+  STOP
+END
+*
+GOSUB GET.TEST
+IDATA=RAW.DATA
+*
+PART.TWO=0
+GOSUB PROCESS.PART.ONE
+INPUT XYZ
+*
+PART.TWO=1
+GOSUB PROCESS.PART.TWO
+*
+*END OF MAIN LOGIC
+STOP
+*======================================*
+*==========INTERNAL SUBROUTINES========*
+*======================================*
+PROCESS.PART.TWO:
+  WORK.DATA=""
+  WORK.DATA=IDATA
+  FOR I = 1 TO 2
+    WORK.DATA<I>=FIELD(WORK.DATA<I>,':',2)
+    WORK.DATA<I>=TRIM(WORK.DATA<I>,' ','D')
+    *DONT CONVERT SPACES TO @VM, CONVERT TO NULL
+    *CONVERT " " TO @VM IN WORK.DATA<I>
+    CONVERT " " TO "" IN WORK.DATA<I>
+  NEXT I
+  *
+  GOSUB CALC.TME
+  *
+  CRT 'PART 2: Number of ways to win races = ':GTOT
+RETURN
+*======================================*
+PROCESS.PART.ONE:
+  WORK.DATA=""
+  WORK.DATA=IDATA
+  FOR I = 1 TO 2
+    WORK.DATA<I>=FIELD(WORK.DATA<I>,':',2)
+    WORK.DATA<I>=TRIM(WORK.DATA<I>,' ','D')
+    CONVERT " " TO @VM IN WORK.DATA<I>
+  NEXT I
+  *
+  GOSUB CALC.TME
+  *
+  CRT 'PART 1: Number of ways to win races = ':GTOT
+RETURN
+*======================================*
+CALC.TME:
+  COUNTER=0;GTOT=1
+  VCNT=DCOUNT(WORK.DATA<1>,@VM)
+  CRT 'Processing Race Loop ':
+  FOR RACE.LOOP = 1 TO VCNT
+    TME="";DIST=""
+    TME=WORK.DATA<1,RACE.LOOP>
+    DIST=WORK.DATA<2,RACE.LOOP>
+    *
+    TOT.NUM.TMES=0
+    FOR I = 1 TO TME
+      COUNTER+=1
+      IF PART.TWO=1 THEN
+        YNUM=100
+      END ELSE
+        YNUM=10
+      END
+      IF REM(COUNTER,YNUM)=0 THEN
+        CRT '.':
+      END
+      MNUM=""
+      MNUM=TME-I
+      FULL.DIST=I*MNUM
+      IF FULL.DIST GT DIST THEN
+         TOT.NUM.TMES+=1
+      END
+    NEXT I
+    *
+    GTOT*=TOT.NUM.TMES
+  NEXT RACE.LOOP
+  CRT " "
+  *
+RETURN
+*======================================*
+GET.TEST:
+  RAW.DATA=""
+  RAW.DATA<-1>='Time:      7  15   30'
+  RAW.DATA<-1>='Distance:  9  40  200'
+RETURN
+*======================================*
+*END OF PROGRAM
+END
