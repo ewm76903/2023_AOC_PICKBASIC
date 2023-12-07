@@ -1,0 +1,436 @@
+PROGRAM DAY_7
+*
+OPEN 'UNIX.FILE' TO F.UNIX ELSE
+  CRT 'CANT OPEN UNIX.FILE'
+  STOP
+END
+*
+IDATA=""
+READ IDATA FROM F.UNIX,'DAY_7_DATA' ELSE
+  CRT 'CANT READ DAY_7_DATA'
+  STOP
+END
+*
+GOSUB GET.TEST
+IDATA=RAW.DATA
+*
+PART.TWO=0
+GOSUB PROCESS.PART.ONE
+INPUT XYZ
+*
+PART.TWO=1
+GOSUB PROCESS.PART.TWO
+*
+*END OF MAIN LOGIC
+STOP
+*======================================*
+*==========INTERNAL SUBROUTINES========*
+*======================================*
+PROCESS.PART.TWO:
+  STME=""
+  STME=TIME()
+  GOSUB PROCESS.WORK.DATA
+  *
+  *set up new array, and put in it's default first position
+  NEW.WORK.DATA=""
+  NEW.WORK.DATA<1,1>=WORK.DATA<1,1>
+  NEW.WORK.DATA<2,1>=WORK.DATA<2,1>
+  *
+  *Now loop thru the rest of the data
+  VCNT=DCOUNT(WORK.DATA<1>,@VM)
+  FOR I = 2 TO VCNT
+    NEW.VCNT=""
+    NEW.VCNT=DCOUNT(NEW.WORK.DATA<1>,@VM)
+    HAND="";BET=""
+    HAND=WORK.DATA<1,I>
+    BET=WORK.DATA<2,I>
+    *
+    DID.INS=0
+    FOR K = 1 TO NEW.VCNT
+      THAND="";TBET=""
+      THAND=NEW.WORK.DATA<1,K>
+      TBET=NEW.WORK.DATA<2,K>
+      DO.INS=0
+      GOSUB PROCESS.HAND
+      IF DO.INS=1 THEN
+        DID.INS=1
+        INS HAND BEFORE NEW.WORK.DATA<1,K>
+        INS BET BEFORE NEW.WORK.DATA<2,K>
+        EXIT
+      END
+    NEXT K
+    IF DID.INS=0 THEN
+      *TACK TO END OF NEW.WORK.DATA
+      NEW.WORK.DATA<1,-1>=HAND
+      NEW.WORK.DATA<2,-1>=BET
+    END
+    *
+  NEXT I
+  *
+  WRITE WORK.DATA ON F.UNIX,'WORK.DATA'
+  WRITE NEW.WORK.DATA ON F.UNIX,'NEW.WORK.DATA'
+  *
+  GTOT=0
+  VPOS=0
+  NEW.VCNT=""
+  NEW.VCNT=DCOUNT(NEW.WORK.DATA<1>,@VM)
+  FOR I = NEW.VCNT TO 1 STEP -1    ;*GO FROM END TO FRONT
+    BET=""
+    VPOS+=1
+    BET=NEW.WORK.DATA<2,VPOS>
+    GTOT+=(BET*I)
+  NEXT I
+  ETME=""
+  ETME=TIME()
+  *
+  CRT 'Part 2: For the hands, the GTOT = ':GTOT
+  CRT 'Processing data set = ':(ETME-STME)
+RETURN
+*======================================*
+PROCESS.PART.ONE:
+  STME=""
+  STME=TIME()
+  GOSUB PROCESS.WORK.DATA
+  *
+  *set up new array, and put in it's default first position
+  NEW.WORK.DATA=""
+  NEW.WORK.DATA<1,1>=WORK.DATA<1,1>
+  NEW.WORK.DATA<2,1>=WORK.DATA<2,1>
+  *
+  *Now loop thru the rest of the data
+  VCNT=DCOUNT(WORK.DATA<1>,@VM)
+  FOR I = 2 TO VCNT
+    NEW.VCNT=""
+    NEW.VCNT=DCOUNT(NEW.WORK.DATA<1>,@VM)
+    HAND="";BET=""
+    HAND=WORK.DATA<1,I>
+    BET=WORK.DATA<2,I>
+    *
+    DID.INS=0
+    FOR K = 1 TO NEW.VCNT
+      THAND="";TBET=""
+      THAND=NEW.WORK.DATA<1,K>
+      TBET=NEW.WORK.DATA<2,K>
+      DO.INS=0
+      GOSUB PROCESS.HAND
+      IF DO.INS=1 THEN
+        DID.INS=1
+        INS HAND BEFORE NEW.WORK.DATA<1,K>
+        INS BET BEFORE NEW.WORK.DATA<2,K>
+        EXIT
+      END
+    NEXT K
+    IF DID.INS=0 THEN
+      *TACK TO END OF NEW.WORK.DATA
+      NEW.WORK.DATA<1,-1>=HAND
+      NEW.WORK.DATA<2,-1>=BET
+    END
+    *
+  NEXT I
+  *
+  WRITE WORK.DATA ON F.UNIX,'WORK.DATA'
+  WRITE NEW.WORK.DATA ON F.UNIX,'NEW.WORK.DATA'
+  *
+  GTOT=0
+  VPOS=0
+  NEW.VCNT=""
+  NEW.VCNT=DCOUNT(NEW.WORK.DATA<1>,@VM)
+  FOR I = NEW.VCNT TO 1 STEP -1    ;*GO FROM END TO FRONT
+    BET=""
+    VPOS+=1
+    BET=NEW.WORK.DATA<2,VPOS>
+    GTOT+=(BET*I)
+  NEXT I
+  ETME=""
+  ETME=TIME()
+  *
+  CRT 'Part 1: For the hands, the GTOT = ':GTOT
+  CRT 'Processing data set = ':(ETME-STME)
+RETURN
+*======================================*
+JOKER.RULE:
+  NEW.CARD.RANKS=""
+  NEW.CARD.RANKS=CARD.RANKS
+  *
+  IF INDEX(HAND,'J',1) GE 1 THEN
+    XLEN=""
+    XLEN=LEN(HAND)
+    FOR X = 1 TO XLEN
+      CARD="";THE.POS=""
+      CARD=HAND[X,1]
+      IF CARD # "J" THEN
+        LOCATE(CARD,NEW.CARD.RANKS,1;THE.POS) THEN
+          NEW.CARD.RANKS<2,THE.POS>+=1
+        END
+      END
+    NEXT X
+    *
+    *now find the card with the most numbers
+    NEW.CARD.VCNT=""
+    NEW.CARD.VCNT=DCOUNT(NEW.CARD.RANKS<1>,@VM)
+    HNUM=0;THE.CARD=""
+    FOR X = 1 TO NEW.CARD.VCNT
+      NUM.CARD=""
+      NUM.CARD=NEW.CARD.RANKS<2,X>
+      IF NUM.CARD GT HNUM THEN
+        HNUM=NUM.CARD
+        THE.CARD=NEW.CARD.RANKS<1,X>
+      END
+    NEXT X
+    *
+    IF HAND # "JJJJJ" THEN
+      *Now replace "J" with THE.CARD
+      HAND=CHANGE(HAND,"J",THE.CARD)
+    END
+  END
+  *
+  IF INDEX(THAND,'J',1) GE 1 THEN
+    XLEN=""
+    XLEN=LEN(THAND)
+    FOR X = 1 TO XLEN
+      CARD="";THE.POS=""
+      CARD=THAND[X,1]
+      IF CARD # "J" THEN
+        LOCATE(CARD,NEW.CARD.RANKS,1;THE.POS) THEN
+          NEW.CARD.RANKS<3,THE.POS>+=1
+        END
+      END
+    NEXT X
+    *
+    *now find the card with the most numbers
+    NEW.CARD.VCNT=""
+    NEW.CARD.VCNT=DCOUNT(NEW.CARD.RANKS<1>,@VM)
+    HNUM=0;THE.CARD=""
+    FOR X = 1 TO NEW.CARD.VCNT
+      NUM.CARD=""
+      NUM.CARD=NEW.CARD.RANKS<3,X>
+      IF NUM.CARD GT HNUM THEN
+        HNUM=NUM.CARD
+        THE.CARD=NEW.CARD.RANKS<1,X>
+      END
+    NEXT X
+    *
+    IF THAND # "JJJJJ" THEN
+      *Now replace "J" with THE.CARD
+      THAND=CHANGE(THAND,"J",THE.CARD)
+    END
+  END
+RETURN
+*======================================*
+PROCESS.HAND:
+  *
+  IF PART.TWO=1 THEN
+    ORIG.HAND="";ORIG.THAND=""
+    ORIG.HAND=HAND
+    ORIG.THAND=THAND
+    GOSUB JOKER.RULE
+  END
+  *MAIN HAND LOOP
+  XLEN=""
+  XLEN=LEN(HAND)
+  FOR X = 1 TO XLEN
+    CARD="";THE.POS=""
+    CARD=HAND[X,1]
+    LOCATE(CARD,CARD.RANKS,1;THE.POS) THEN
+      CARD.RANKS<2,THE.POS>+=1
+    END
+  NEXT X
+  *
+  *SECOND HAND LOOP
+  XLEN=""
+  XLEN=LEN(THAND)
+  FOR X = 1 TO XLEN
+    CARD="";THE.POS=""
+    CARD=THAND[X,1]
+    LOCATE(CARD,CARD.RANKS,1;THE.POS) THEN
+      CARD.RANKS<3,THE.POS>+=1
+    END
+  NEXT X
+  *
+  CARD.VCNT=""
+  CARD.VCNT=DCOUNT(CARD.RANKS<1>,@VM)
+  MAIN.HAND.TYPE=""
+  FOR X = 1 TO CARD.VCNT
+    XNUM=""
+    XNUM=CARD.RANKS<2,X>
+    IF XNUM GT 0 THEN
+      IF XNUM GT 1 THEN
+        MAIN.HAND.TYPE=XNUM:MAIN.HAND.TYPE
+      END ELSE
+        MAIN.HAND.TYPE:=XNUM
+      END
+    END
+  NEXT X
+  IF MAIN.HAND.TYPE='23' THEN MAIN.HAND.TYPE='32'  ;*FULL HOUSE SPOT
+  *
+  SEC.HAND.TYPE=""
+  FOR X = 1 TO CARD.VCNT
+    XNUM=""
+    XNUM=CARD.RANKS<3,X>
+    IF XNUM GT 0 THEN
+      IF XNUM GT 1 THEN
+        SEC.HAND.TYPE=XNUM:SEC.HAND.TYPE
+      END ELSE
+        SEC.HAND.TYPE:=XNUM
+      END
+    END
+  NEXT X
+  IF SEC.HAND.TYPE='23' THEN SEC.HAND.TYPE='32'  ;*FULL HOUSE SPOT
+  *
+  *NOW, FIRST SEE IF ONE HAND IS HIGHER THAN THE OTHER
+  FIRST.POS="";SEC.POS=""
+  LOCATE(MAIN.HAND.TYPE,HAND.TYPES;FIRST.POS) ELSE FIRST.POS=0
+  LOCATE(SEC.HAND.TYPE,HAND.TYPES;SEC.POS) ELSE SEC.POS=0
+  IF PART.TWO=1 THEN
+    IF HAND='JJJJJ' THEN FIRST.POS=HAND.TYPES<DCOUNT(HAND.TYPES,@AM)>
+    IF THAND='JJJJJ' THEN SEC.POS=HAND.TYPES<DCOUNT(HAND.TYPES,@AM)>
+  END
+  BEGIN CASE
+    CASE FIRST.POS GT SEC.POS
+      *FIRST HAND WINS
+      DO.INS=1
+      IF PART.TWO=1 THEN
+        *JOKER RULE, SET BOTH HANDS BACK TO ORIGINALS
+        HAND=ORIG.HAND
+        THAND=ORIG.THAND
+      END
+    CASE SEC.POS GT FIRST.POS
+      *SECOND HAND WINS
+      DO.INS=0
+      IF PART.TWO=1 THEN
+        *JOKER RULE, SET BOTH HANDS BACK TO ORIGINALS
+        HAND=ORIG.HAND
+        THAND=ORIG.THAND
+      END
+    CASE 1
+      *BOTH HANDS ARE THE SAME
+      *NOW PROCESS CARDS
+      IF PART.TWO=1 THEN
+        *JOKER RULE, SET BOTH HANDS BACK TO ORIGINALS
+        HAND=ORIG.HAND
+        THAND=ORIG.THAND
+      END
+      FOR X = 1 TO 5
+        MAIN.CARD=""
+        SEC.CARD=""
+        MAIN.CARD=HAND[X,1]
+        SEC.CARD=THAND[X,1]
+        MAIN.VPOS=0
+        SEC.VPOS=0
+        LOCATE(MAIN.CARD,CARD.RANKS,1;MAIN.VPOS) ELSE MAIN.VPOS=0
+        LOCATE(SEC.CARD,CARD.RANKS,1;SEC.VPOS) ELSE SEC.VPOS=0
+        BEGIN CASE
+          CASE MAIN.VPOS GT SEC.VPOS
+            DO.INS=1
+            EXIT
+          CASE SEC.VPOS GT MAIN.VPOS
+            DO.INS=0
+            EXIT
+          CASE 1
+            NULL
+        END CASE
+      NEXT X
+  END CASE
+  *
+  *RE-INIT CARD.RANKS ARRAY
+  CR.CNT=DCOUNT(CARD.RANKS<1>,@VM)
+  FOR X = 1 TO CR.CNT
+    CARD.RANKS<2,X>=0
+    CARD.RANKS<3,X>=0
+  NEXT X
+  *
+RETURN
+*======================================*
+PROCESS.WORK.DATA:
+  WORK.DATA=""
+  ACNT=DCOUNT(IDATA,@AM)
+  VPOS=0
+  FOR I = 1 TO ACNT
+    ILINE=""
+    ILINE=TRIM(IDATA<I>,' ','D')
+    VPOS+=1
+    WORK.DATA<1,VPOS>=FIELD(IDATA<I>,' ',1) ;*HAND
+    WORK.DATA<2,VPOS>=FIELD(IDATA<I>,' ',2) ;*BET
+  NEXT I
+  *
+  CARD.RANKS=""
+  IF PART.TWO=1 THEN
+    *"J" IS JOKER, AND BELOW "2"
+    CARD.RANKS<1,-1>='J'
+    CARD.RANKS<1,-1>='2'
+    CARD.RANKS<1,-1>='3'
+    CARD.RANKS<1,-1>='4'
+    CARD.RANKS<1,-1>='5'
+    CARD.RANKS<1,-1>='6'
+    CARD.RANKS<1,-1>='7'
+    CARD.RANKS<1,-1>='8'
+    CARD.RANKS<1,-1>='9'
+    CARD.RANKS<1,-1>='T'
+    CARD.RANKS<1,-1>='Q'
+    CARD.RANKS<1,-1>='K'
+    CARD.RANKS<1,-1>='A'
+  END ELSE
+    CARD.RANKS<1,-1>='2'
+    CARD.RANKS<1,-1>='3'
+    CARD.RANKS<1,-1>='4'
+    CARD.RANKS<1,-1>='5'
+    CARD.RANKS<1,-1>='6'
+    CARD.RANKS<1,-1>='7'
+    CARD.RANKS<1,-1>='8'
+    CARD.RANKS<1,-1>='9'
+    CARD.RANKS<1,-1>='T'
+    CARD.RANKS<1,-1>='J'
+    CARD.RANKS<1,-1>='Q'
+    CARD.RANKS<1,-1>='K'
+    CARD.RANKS<1,-1>='A'
+  END
+  XCNT=""
+  XCNT=DCOUNT(CARD.RANKS<1>,@VM)
+  FOR X = 1 TO XCNT
+    CARD.RANKS<2,X>=0
+    CARD.RANKS<3,X>=0
+  NEXT X
+  *
+  HAND.TYPES=""
+  HAND.TYPES<-1>='11111'
+  HAND.TYPES<-1>='2111'
+  HAND.TYPES<-1>='221'
+  HAND.TYPES<-1>='311'
+  HAND.TYPES<-1>='32'
+  HAND.TYPES<-1>='41'
+  HAND.TYPES<-1>='5'
+RETURN
+*======================================*
+GET.TEST:
+  RAW.DATA=""
+  *RAW.DATA<-1>='32T3K 765'
+  *RAW.DATA<-1>='555TT 1'
+  *RAW.DATA<-1>='T55J5 684'
+  *RAW.DATA<-1>='KK677 28'
+  *RAW.DATA<-1>='KTJJT 220'
+  *RAW.DATA<-1>='QQQJA 483'
+  *
+  RAW.DATA<-1>='2345A 1'
+  RAW.DATA<-1>='Q2KJJ 13'
+  RAW.DATA<-1>='Q2Q2Q 19'
+  RAW.DATA<-1>='T3T3J 17'
+  RAW.DATA<-1>='T3Q33 11'
+  RAW.DATA<-1>='2345J 3'
+  RAW.DATA<-1>='J345A 2'
+  RAW.DATA<-1>='32T3K 5'
+  RAW.DATA<-1>='T55J5 29'
+  RAW.DATA<-1>='KK677 7'
+  RAW.DATA<-1>='KTJJT 34'
+  RAW.DATA<-1>='QQQJA 31'
+  RAW.DATA<-1>='JJJJJ 37'
+  RAW.DATA<-1>='JAAAA 43'
+  RAW.DATA<-1>='AAAAJ 59'
+  RAW.DATA<-1>='AAAAA 61'
+  RAW.DATA<-1>='2AAAA 23'
+  RAW.DATA<-1>='2JJJJ 53'
+  RAW.DATA<-1>='JJJJ2 41'
+  *
+RETURN
+*======================================*
+*END OF PROGRAM
+END
