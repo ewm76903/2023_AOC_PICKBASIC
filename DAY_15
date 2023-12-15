@@ -1,0 +1,161 @@
+PROGRAM DAY_15
+*
+OPEN 'UNIX.FILE' TO F.UNIX ELSE
+  CRT 'CANT OPEN UNIX.FILE'
+  STOP
+END
+*
+IDATA=""
+READ IDATA FROM F.UNIX,'DAY_15_DATA' ELSE
+  CRT 'CANT READ DAY_15_DATA'
+  STOP
+END
+*
+PART.TWO=0
+GOSUB GET.TEST
+IDATA=RAW.DATA
+*
+ERR.MSG=""
+GOSUB PROCESS.PART.ONE
+INPUT XYZ
+IF ERR.MSG # "" THEN STOP
+*
+PART.TWO=1
+GOSUB GET.TEST
+IDATA=RAW.DATA
+ERR.MSG=""
+GOSUB PROCESS.PART.TWO
+*
+*END OF MAIN LOGIC
+STOP
+*======================================*
+*==========INTERNAL SUBROUTINES========*
+*======================================*
+PROCESS.PART.TWO:
+  STME=""
+  STME=TIME()
+  *
+  GOSUB PROCESS.WORK.DATA
+  *
+  GTOT=0
+  DIM LENSBOXES(256)
+  MAT LENSBOXES = ""
+  ATBCNT=DCOUNT(WORK.DATA,@AM)
+  FOR MAIN.LOOP = 1 TO ATBCNT
+    THE.VAL=0;THE.TEXT="";FLEN=""
+    THE.TEXT=WORK.DATA<MAIN.LOOP>
+    RMFLAG=0
+    IF INDEX(THE.TEXT,'-',1) GE 1 THEN
+      THE.TEXT=FIELD(WORK.DATA<MAIN.LOOP>,'-',1)
+      RMFLAG=1
+    END ELSE
+      THE.TEXT=FIELD(WORK.DATA<MAIN.LOOP>,'=',1)
+      FLEN=FIELD(WORK.DATA<MAIN.LOOP>,'=',2)
+    END
+    GOSUB HASH.IT
+    THE.VAL+=1
+    *
+    LENS.ARRY=""
+    LENS.ARRY=LENSBOXES(THE.VAL)
+    *
+    IF RMFLAG=1 THEN
+      VPOS=""
+      LOCATE(THE.TEXT,LENS.ARRY,1;VPOS) THEN
+         DEL LENS.ARRY<1,VPOS>
+         DEL LENS.ARRY<2,VPOS>
+         IF LENS.ARRY<1,1>="" THEN LENS.ARRY=""
+      END
+    END ELSE
+      VPOS=""
+      LOCATE(THE.TEXT,LENS.ARRY,1;VPOS) THEN
+         LENS.ARRY<1,VPOS>=THE.TEXT
+         LENS.ARRY<2,VPOS>=FLEN
+      END ELSE
+         LENS.ARRY<1,-1>=THE.TEXT
+         LENS.ARRY<2,-1>=FLEN
+      END
+    END
+    *
+    LENSBOXES(THE.VAL)=LENS.ARRY
+  NEXT MAIN.LOOP
+  *
+  GTOT=0;GARRY=""
+  FOR MAIN.LOOP = 1 TO 256
+     GARRY<MAIN.LOOP>=0
+     LENS.ARRY=""
+     LENS.ARRY=LENSBOXES(MAIN.LOOP)
+     IF LENS.ARRY # "" THEN
+       BOXTOTS=""
+       VCNT=DCOUNT(LENS.ARRY<1>,@VM)
+       FOR I = 1 TO VCNT
+         THENUM=0
+         THENUM=(MAIN.LOOP*I)*LENS.ARRY<2,I>
+         BOXTOTS<I>=THENUM
+       NEXT I
+       GARRY<MAIN.LOOP>=SUM(BOXTOTS)
+     END
+  NEXT MAIN.LOOP
+  GTOT=SUM(GARRY)
+  *
+  ETME=""
+  ETME=TIME()
+  CRT 'Part 2 GTOT = ':GTOT
+  CRT 'Part 2 Processing Time = ':(ETME-STME)
+RETURN
+*======================================*
+PROCESS.PART.ONE:
+  STME=""
+  STME=TIME()
+  *
+  GOSUB PROCESS.WORK.DATA
+  *
+  GTOT=0
+  ATBCNT=DCOUNT(WORK.DATA,@AM)
+  FOR MAIN.LOOP = 1 TO ATBCNT
+    THE.VAL=0;THE.TEXT=""
+    THE.TEXT=WORK.DATA<MAIN.LOOP>
+    GOSUB HASH.IT
+    GTOT+=THE.VAL
+  NEXT MAIN.LOOP
+  *
+  ETME=""
+  ETME=TIME()
+  CRT 'Part 1: GTOT = ':GTOT
+  CRT 'Part 1 Processing Time = ':(ETME-STME)
+RETURN
+*======================================*
+HASH.IT:
+    SLEN=LEN(THE.TEXT)
+    FOR K = 1 TO SLEN
+      LETTER=""
+      LETTER=THE.TEXT[K,1]
+      ACODE=""
+      ACODE=SEQ(LETTER)
+      THE.VAL+=ACODE
+      THE.VAL*=17
+      THE.VAL=REM(THE.VAL,256)
+    NEXT K
+RETURN
+*======================================*
+PROCESS.WORK.DATA:
+  WORK.DATA=""
+  WORK.DATA=IDATA
+  *
+  WORK.DATA=TRIM(WORK.DATA,' ','D')
+RETURN
+*======================================*
+GET.TEST:
+  RAW.DATA=""
+  *
+  IF PART.TWO=0 THEN
+    RAW.DATA<-1>='rn=1,cm-,qp=3,cm=2,qp-,pc=4,ot=9,ab=5,pc-,pc=6,ot=7'
+    CONVERT ',' TO @AM IN RAW.DATA
+  END ELSE
+    RAW.DATA<-1>='rn=1,cm-,qp=3,cm=2,qp-,pc=4,ot=9,ab=5,pc-,pc=6,ot=7'
+    CONVERT ',' TO @AM IN RAW.DATA
+  END
+  *
+RETURN
+*======================================*
+*END OF PROGRAM
+END
